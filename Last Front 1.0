@@ -1,0 +1,998 @@
+-- =====================================================
+--   ЧАСТЬ 1: GUI + Настройки
+-- =====================================================
+
+local player = game.Players.LocalPlayer
+if not player then
+    repeat task.wait() until game.Players.LocalPlayer
+    player = game.Players.LocalPlayer
+end
+
+-- Создание GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "UI_" .. math.random(1000, 9999)
+gui.ResetOnSpawn = false
+
+local success, parent = pcall(function() return gethui() end)
+if success and parent then
+    gui.Parent = parent
+else
+    pcall(function()
+        gui.Parent = player:WaitForChild("PlayerGui")
+    end)
+end
+
+-- ==================== ГЛАВНОЕ ОКНО ====================
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 550, 0, 380)
+mainFrame.Position = UDim2.new(0.5, -275, 0.5, -190)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = gui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = mainFrame
+
+-- ==================== ЛЕВАЯ ПАНЕЛЬ ====================
+local leftPanel = Instance.new("Frame")
+leftPanel.Size = UDim2.new(0, 140, 1, 0)
+leftPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+leftPanel.BorderSizePixel = 0
+leftPanel.Parent = mainFrame
+
+local leftCorner = Instance.new("UICorner")
+leftCorner.CornerRadius = UDim.new(0, 12)
+leftCorner.Parent = leftPanel
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "PROJECT X"
+title.TextColor3 = Color3.fromRGB(255, 50, 50)
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 20
+title.Parent = leftPanel
+
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(1, -20, 0, 1)
+divider.Position = UDim2.new(0, 10, 0, 45)
+divider.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+divider.BorderSizePixel = 0
+divider.Parent = leftPanel
+
+-- Кнопки категорий
+local function createCategoryButton(text, yPos)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 36)
+    btn.Position = UDim2.new(0, 10, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    btn.BorderSizePixel = 0
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.AutoButtonColor = false
+    btn.Parent = leftPanel
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+
+    return btn
+end
+
+local visualsBtn = createCategoryButton("🎯 Visuals", 60)
+local aimbotBtn = createCategoryButton("🔫 Aimbot", 102)
+local miscBtn = createCategoryButton("⚙ Misc", 144)
+
+local function setActive(btn)
+    for _, b in pairs({visualsBtn, aimbotBtn, miscBtn}) do
+        b.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        b.TextColor3 = Color3.fromRGB(180, 180, 180)
+    end
+    btn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+end
+
+-- ==================== ПРАВАЯ ПАНЕЛЬ ====================
+local rightPanel = Instance.new("Frame")
+rightPanel.Size = UDim2.new(1, -150, 1, 0)
+rightPanel.Position = UDim2.new(0, 145, 0, 0)
+rightPanel.BackgroundTransparency = 1
+rightPanel.Parent = mainFrame
+
+-- Контейнеры вкладок
+local visualContent = Instance.new("Frame")
+visualContent.Size = UDim2.new(1, 0, 1, 0)
+visualContent.BackgroundTransparency = 1
+visualContent.Visible = true
+visualContent.Parent = rightPanel
+
+local aimbotContent = Instance.new("Frame")
+aimbotContent.Size = UDim2.new(1, 0, 1, 0)
+aimbotContent.BackgroundTransparency = 1
+aimbotContent.Visible = false
+aimbotContent.Parent = rightPanel
+
+local miscContent = Instance.new("Frame")
+miscContent.Size = UDim2.new(1, 0, 1, 0)
+miscContent.BackgroundTransparency = 1
+miscContent.Visible = false
+miscContent.Parent = rightPanel
+
+-- ==================== ФУНКЦИИ ДЛЯ КНОПОК ====================
+local function createToggle(text, parent, default, callback)
+    local toggle = Instance.new("Frame")
+    toggle.Size = UDim2.new(1, -5, 0, 32)
+    toggle.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    toggle.BorderSizePixel = 0
+    toggle.Parent = parent
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = toggle
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.65, 0, 1, 0)
+    label.Position = UDim2.new(0, 8, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = toggle
+
+    local switch = Instance.new("TextButton")
+    switch.Size = UDim2.new(0, 38, 0, 18)
+    switch.Position = UDim2.new(1, -46, 0.5, -9)
+    switch.BackgroundColor3 = default and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(50, 50, 50)
+    switch.BorderSizePixel = 0
+    switch.Text = ""
+    switch.AutoButtonColor = false
+    switch.Parent = toggle
+
+    local switchCorner = Instance.new("UICorner")
+    switchCorner.CornerRadius = UDim.new(1, 0)
+    switchCorner.Parent = switch
+
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 14, 0, 14)
+    dot.Position = default and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+    dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    dot.BorderSizePixel = 0
+    dot.Parent = switch
+
+    local dotCorner = Instance.new("UICorner")
+    dotCorner.CornerRadius = UDim.new(1, 0)
+    dotCorner.Parent = dot
+
+    local state = default
+
+    switch.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            switch.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+            dot:TweenPosition(UDim2.new(1, -16, 0.5, -7), "Out", "Quad", 0.15)
+        else
+            switch.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            dot:TweenPosition(UDim2.new(0, 2, 0.5, -7), "Out", "Quad", 0.15)
+        end
+        if callback then callback(state) end
+    end)
+
+    return toggle
+end
+
+local function createSlider(text, parent, min, max, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -5, 0, 50)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -16, 0, 18)
+    label.Position = UDim2.new(0, 8, 0, 4)
+    label.BackgroundTransparency = 1
+    label.Text = text .. ": " .. default
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 11
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local sliderBg = Instance.new("Frame")
+    sliderBg.Size = UDim2.new(1, -20, 0, 4)
+    sliderBg.Position = UDim2.new(0, 10, 0, 28)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    sliderBg.BorderSizePixel = 0
+    sliderBg.Parent = frame
+
+    local sliderCorner = Instance.new("UICorner")
+    sliderCorner.CornerRadius = UDim.new(1, 0)
+    sliderCorner.Parent = sliderBg
+
+    local fill = Instance.new("Frame")
+    local percent = (default - min) / (max - min)
+    fill.Size = UDim2.new(percent, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    fill.BorderSizePixel = 0
+    fill.Parent = sliderBg
+
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    fillCorner.Parent = fill
+
+    local knob = Instance.new("TextButton")
+    knob.Size = UDim2.new(0, 12, 0, 12)
+    knob.Position = UDim2.new(percent, -6, 0.5, -6)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.BorderSizePixel = 0
+    knob.Text = ""
+    knob.AutoButtonColor = false
+    knob.Parent = sliderBg
+
+    local knobCorner = Instance.new("UICorner")
+    knobCorner.CornerRadius = UDim.new(1, 0)
+    knobCorner.Parent = knob
+
+    local value = default
+    local dragging = false
+
+    local function updateSlider(inputX)
+        local relX = math.clamp((inputX - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+        value = math.floor(min + (max - min) * relX + 0.5)
+        value = math.clamp(value, min, max)
+        fill.Size = UDim2.new(relX, 0, 1, 0)
+        knob.Position = UDim2.new(relX, -6, 0.5, -6)
+        label.Text = text .. ": " .. value
+        if callback then callback(value) end
+    end
+
+    knob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+    knob.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateSlider(input.Position.X)
+            dragging = true
+        end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input.Position.X)
+        end
+    end)
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    return frame, function() return value end
+end
+
+print("✅ Часть 1 загружена!")
+-- =====================================================
+--   ЧАСТЬ 2: Visuals + ESP
+-- =====================================================
+
+-- Заголовок Visuals
+local visualTitle = Instance.new("TextLabel")
+visualTitle.Size = UDim2.new(1, 0, 0, 35)
+visualTitle.BackgroundTransparency = 1
+visualTitle.Text = "VISUALS"
+visualTitle.TextColor3 = Color3.fromRGB(255, 50, 50)
+visualTitle.Font = Enum.Font.GothamBlack
+visualTitle.TextSize = 18
+visualTitle.TextXAlignment = Enum.TextXAlignment.Left
+visualTitle.Parent = visualContent
+
+local visualDiv = Instance.new("Frame")
+visualDiv.Size = UDim2.new(1, 0, 0, 1)
+visualDiv.Position = UDim2.new(0, 0, 0, 35)
+visualDiv.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+visualDiv.BorderSizePixel = 0
+visualDiv.Parent = visualContent
+
+-- Левая часть - настройки
+local settingsFrame = Instance.new("Frame")
+settingsFrame.Size = UDim2.new(0.55, -10, 1, -45)
+settingsFrame.Position = UDim2.new(0, 0, 0, 45)
+settingsFrame.BackgroundTransparency = 1
+settingsFrame.Parent = visualContent
+
+local settingsScroll = Instance.new("ScrollingFrame")
+settingsScroll.Size = UDim2.new(1, 0, 1, 0)
+settingsScroll.BackgroundTransparency = 1
+settingsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+settingsScroll.ScrollBarThickness = 4
+settingsScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
+settingsScroll.Parent = settingsFrame
+
+local settingsList = Instance.new("UIListLayout")
+settingsList.Padding = UDim.new(0, 6)
+settingsList.Parent = settingsScroll
+
+-- Секция ESP
+local espSection = Instance.new("TextLabel")
+espSection.Size = UDim2.new(1, 0, 0, 20)
+espSection.BackgroundTransparency = 1
+espSection.Text = "ESP SETTINGS"
+espSection.TextColor3 = Color3.fromRGB(255, 100, 100)
+espSection.Font = Enum.Font.GothamBold
+espSection.TextSize = 11
+espSection.TextXAlignment = Enum.TextXAlignment.Left
+espSection.Parent = settingsScroll
+
+-- Переменные ESP
+local espSettings = {
+    boxes = true,
+    skeleton = false,
+    health = true,
+    tracers = false,
+    names = true,
+    trail = false,
+    trailColor = Color3.fromRGB(255, 50, 50)
+}
+
+local drawings = {}
+local espEnabled = false
+
+-- Очистка ESP
+local function clearESP()
+    for _, d in pairs(drawings) do
+        pcall(function() d:Remove() end)
+    end
+    drawings = {}
+end
+
+-- Функция ESP
+local function drawESP()
+    clearESP()
+    if not espEnabled then return end
+    
+    local camera = workspace.CurrentCamera
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= player and plr.Character then
+            local head = plr.Character:FindFirstChild("Head")
+            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            local humanoid = plr.Character:FindFirstChild("Humanoid")
+            
+            if head and hrp then
+                local headPos, onScreen = camera:WorldToViewportPoint(head.Position)
+                local hrpPos = camera:WorldToViewportPoint(hrp.Position)
+                
+                if onScreen then
+                    -- Boxes
+                    if espSettings.boxes then
+                        local boxSize = Vector2.new(40, 55)
+                        local box = Drawing.new("Square")
+                        box.Position = Vector2.new(headPos.X - boxSize.X/2, headPos.Y - boxSize.Y/2 - 5)
+                        box.Size = boxSize
+                        box.Color = Color3.fromRGB(255, 50, 50)
+                        box.Thickness = 2
+                        box.Filled = false
+                        box.Visible = true
+                        table.insert(drawings, box)
+                    end
+                    
+                    -- Skeleton
+                    if espSettings.skeleton and plr.Character then
+                        local parts = {
+                            {"Head", "UpperTorso"},
+                            {"UpperTorso", "LowerTorso"},
+                            {"UpperTorso", "LeftUpperArm"},
+                            {"LeftUpperArm", "LeftLowerArm"},
+                            {"LeftLowerArm", "LeftHand"},
+                            {"UpperTorso", "RightUpperArm"},
+                            {"RightUpperArm", "RightLowerArm"},
+                            {"RightLowerArm", "RightHand"},
+                            {"LowerTorso", "LeftUpperLeg"},
+                            {"LeftUpperLeg", "LeftLowerLeg"},
+                            {"LeftLowerLeg", "LeftFoot"},
+                            {"LowerTorso", "RightUpperLeg"},
+                            {"RightUpperLeg", "RightLowerLeg"},
+                            {"RightLowerLeg", "RightFoot"},
+                        }
+                        for _, pair in ipairs(parts) do
+                            local part1 = plr.Character:FindFirstChild(pair[1])
+                            local part2 = plr.Character:FindFirstChild(pair[2])
+                            if part1 and part2 then
+                                local pos1 = camera:WorldToViewportPoint(part1.Position)
+                                local pos2 = camera:WorldToViewportPoint(part2.Position)
+                                local line = Drawing.new("Line")
+                                line.From = Vector2.new(pos1.X, pos1.Y)
+                                line.To = Vector2.new(pos2.X, pos2.Y)
+                                line.Color = Color3.fromRGB(255, 255, 255)
+                                line.Thickness = 1
+                                line.Visible = true
+                                table.insert(drawings, line)
+                            end
+                        end
+                    end
+                    
+                    -- Health Bar
+                    if espSettings.health and humanoid then
+                        local hpPercent = humanoid.Health / humanoid.MaxHealth
+                        local barBg = Drawing.new("Line")
+                        barBg.From = Vector2.new(headPos.X - 22, headPos.Y - 38)
+                        barBg.To = Vector2.new(headPos.X + 22, headPos.Y - 38)
+                        barBg.Color = Color3.fromRGB(50, 50, 50)
+                        barBg.Thickness = 3
+                        barBg.Visible = true
+                        table.insert(drawings, barBg)
+                        
+                        local barFill = Drawing.new("Line")
+                        barFill.From = Vector2.new(headPos.X - 22, headPos.Y - 38)
+                        barFill.To = Vector2.new(headPos.X - 22 + (44 * hpPercent), headPos.Y - 38)
+                        barFill.Color = hpPercent > 0.5 and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+                        barFill.Thickness = 3
+                        barFill.Visible = true
+                        table.insert(drawings, barFill)
+                    end
+                    
+                    -- Tracers
+                    if espSettings.tracers then
+                        local line = Drawing.new("Line")
+                        line.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
+                        line.To = Vector2.new(headPos.X, headPos.Y)
+                        line.Color = espSettings.trailColor
+                        line.Thickness = 1
+                        line.Visible = true
+                        table.insert(drawings, line)
+                    end
+                    
+                    -- Names
+                    if espSettings.names then
+                        local name = Drawing.new("Text")
+                        name.Text = plr.Name
+                        name.Position = Vector2.new(headPos.X, headPos.Y - 45)
+                        name.Size = 12
+                        name.Color = Color3.fromRGB(255, 255, 255)
+                        name.Center = true
+                        name.Visible = true
+                        table.insert(drawings, name)
+                    end
+                end
+            end
+            
+            -- Trail (рисуется даже если не на экране, в мире)
+            if espSettings.trail and plr.Character and hrp then
+                -- Trail логика сложнее, тут просто маркер
+            end
+        end
+    end
+end
+
+-- Обновление ESP каждый кадр
+game:GetService("RunService").RenderStepped:Connect(function()
+    if espEnabled then
+        drawESP()
+    end
+end)
+
+-- Toggle'ы ESP
+createToggle("Enable ESP", settingsScroll, false, function(state)
+    espEnabled = state
+    if not state then clearESP() end
+end)
+
+createToggle("Boxes", settingsScroll, true, function(state)
+    espSettings.boxes = state
+end)
+
+createToggle("Skeleton", settingsScroll, false, function(state)
+    espSettings.skeleton = state
+end)
+
+createToggle("Health Bar", settingsScroll, true, function(state)
+    espSettings.health = state
+end)
+
+createToggle("Tracers", settingsScroll, false, function(state)
+    espSettings.tracers = state
+end)
+
+createToggle("Player Name", settingsScroll, true, function(state)
+    espSettings.names = state
+end)
+
+-- Секция Trail
+local trailSection = Instance.new("TextLabel")
+trailSection.Size = UDim2.new(1, 0, 0, 20)
+trailSection.BackgroundTransparency = 1
+trailSection.Text = "TRAIL SETTINGS"
+trailSection.TextColor3 = Color3.fromRGB(255, 100, 100)
+trailSection.Font = Enum.Font.GothamBold
+trailSection.TextSize = 11
+trailSection.TextXAlignment = Enum.TextXAlignment.Left
+trailSection.Parent = settingsScroll
+
+createToggle("Player Trail", settingsScroll, false, function(state)
+    espSettings.trail = state
+end)
+
+-- Выбор цвета через простую кнопку
+local colorFrame = Instance.new("Frame")
+colorFrame.Size = UDim2.new(1, -5, 0, 32)
+colorFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+colorFrame.BorderSizePixel = 0
+colorFrame.Parent = settingsScroll
+
+local colorCorner = Instance.new("UICorner")
+colorCorner.CornerRadius = UDim.new(0, 6)
+colorCorner.Parent = colorFrame
+
+local colorLabel = Instance.new("TextLabel")
+colorLabel.Size = UDim2.new(0.5, 0, 1, 0)
+colorLabel.Position = UDim2.new(0, 8, 0, 0)
+colorLabel.BackgroundTransparency = 1
+colorLabel.Text = "Trail Color"
+colorLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+colorLabel.Font = Enum.Font.Gotham
+colorLabel.TextSize = 12
+colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+colorLabel.Parent = colorFrame
+
+local colorBtn = Instance.new("TextButton")
+colorBtn.Size = UDim2.new(0, 28, 0, 28)
+colorBtn.Position = UDim2.new(1, -36, 0.5, -14)
+colorBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+colorBtn.BorderSizePixel = 0
+colorBtn.Text = ""
+colorBtn.AutoButtonColor = false
+colorBtn.Parent = colorFrame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = colorBtn
+
+local trailColors = {
+    Color3.fromRGB(255, 50, 50),
+    Color3.fromRGB(50, 255, 50),
+    Color3.fromRGB(50, 50, 255),
+    Color3.fromRGB(255, 255, 50),
+    Color3.fromRGB(255, 50, 255),
+    Color3.fromRGB(50, 255, 255),
+    Color3.fromRGB(255, 255, 255),
+    Color3.fromRGB(255, 150, 0),
+}
+local colorIndex = 1
+
+colorBtn.MouseButton1Click:Connect(function()
+    colorIndex = colorIndex % #trailColors + 1
+    espSettings.trailColor = trailColors[colorIndex]
+    colorBtn.BackgroundColor3 = trailColors[colorIndex]
+end)
+
+-- Превью ESP
+local previewFrame = Instance.new("Frame")
+previewFrame.Size = UDim2.new(0.42, 0, 0, 200)
+previewFrame.Position = UDim2.new(0.57, 0, 0, 50)
+previewFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+previewFrame.BorderSizePixel = 0
+previewFrame.Parent = visualContent
+
+local previewCorner = Instance.new("UICorner")
+previewCorner.CornerRadius = UDim.new(0, 8)
+previewCorner.Parent = previewFrame
+
+local previewTitle = Instance.new("TextLabel")
+previewTitle.Size = UDim2.new(1, 0, 0, 25)
+previewTitle.BackgroundTransparency = 1
+previewTitle.Text = "PREVIEW"
+previewTitle.TextColor3 = Color3.fromRGB(255, 50, 50)
+previewTitle.Font = Enum.Font.GothamBold
+previewTitle.TextSize = 11
+previewTitle.Parent = previewFrame
+
+local previewPlayer = Instance.new("Frame")
+previewPlayer.Size = UDim2.new(0, 30, 0, 60)
+previewPlayer.Position = UDim2.new(0.5, -15, 0.55, -30)
+previewPlayer.BackgroundTransparency = 1
+previewPlayer.BorderSizePixel = 1
+previewPlayer.BorderColor3 = Color3.fromRGB(255, 50, 50)
+previewPlayer.Parent = previewFrame
+
+local previewPlayerCorner = Instance.new("UICorner")
+previewPlayerCorner.CornerRadius = UDim.new(0, 3)
+previewPlayerCorner.Parent = previewPlayer
+
+local previewHead = Instance.new("Frame")
+previewHead.Size = UDim2.new(0, 16, 0, 16)
+previewHead.Position = UDim2.new(0.5, -8, 0, -22)
+previewHead.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+previewHead.BorderSizePixel = 0
+previewHead.Parent = previewPlayer
+
+local headCorner = Instance.new("UICorner")
+headCorner.CornerRadius = UDim.new(1, 0)
+headCorner.Parent = previewHead
+
+local previewName = Instance.new("TextLabel")
+previewName.Size = UDim2.new(0, 60, 0, 14)
+previewName.Position = UDim2.new(0.5, -30, 0, -40)
+previewName.BackgroundTransparency = 1
+previewName.Text = "Player"
+previewName.TextColor3 = Color3.fromRGB(255, 255, 255)
+previewName.Font = Enum.Font.Gotham
+previewName.TextSize = 10
+previewName.Parent = previewPlayer
+
+local previewHP = Instance.new("Frame")
+previewHP.Size = UDim2.new(0, 40, 0, 3)
+previewHP.Position = UDim2.new(0.5, -20, 0, -4)
+previewHP.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+previewHP.BorderSizePixel = 0
+previewHP.Parent = previewPlayer
+
+local previewHPFill = Instance.new("Frame")
+previewHPFill.Size = UDim2.new(0.75, 0, 1, 0)
+previewHPFill.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+previewHPFill.BorderSizePixel = 0
+previewHPFill.Parent = previewHP
+
+print("✅ Часть 2 загружена!")
+-- =====================================================
+--   ЧАСТЬ 3: Aimbot + Финальные настройки
+-- =====================================================
+
+-- ==================== ВКЛАДКА AIMBOT ====================
+local aimbotTitle = Instance.new("TextLabel")
+aimbotTitle.Size = UDim2.new(1, 0, 0, 35)
+aimbotTitle.BackgroundTransparency = 1
+aimbotTitle.Text = "AIMBOT"
+aimbotTitle.TextColor3 = Color3.fromRGB(255, 50, 50)
+aimbotTitle.Font = Enum.Font.GothamBlack
+aimbotTitle.TextSize = 18
+aimbotTitle.TextXAlignment = Enum.TextXAlignment.Left
+aimbotTitle.Parent = aimbotContent
+
+local aimbotDiv = Instance.new("Frame")
+aimbotDiv.Size = UDim2.new(1, 0, 0, 1)
+aimbotDiv.Position = UDim2.new(0, 0, 0, 35)
+aimbotDiv.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+aimbotDiv.BorderSizePixel = 0
+aimbotDiv.Parent = aimbotContent
+
+-- Скролл для настроек аимбота
+local aimbotScroll = Instance.new("ScrollingFrame")
+aimbotScroll.Size = UDim2.new(1, 0, 1, -45)
+aimbotScroll.Position = UDim2.new(0, 0, 0, 40)
+aimbotScroll.BackgroundTransparency = 1
+aimbotScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+aimbotScroll.ScrollBarThickness = 4
+aimbotScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
+aimbotScroll.Parent = aimbotContent
+
+local aimbotList = Instance.new("UIListLayout")
+aimbotList.Padding = UDim.new(0, 6)
+aimbotList.Parent = aimbotScroll
+
+-- Переменные аимбота
+local aimbotSettings = {
+    enabled = false,
+    silent = false,
+    fov = 150,
+    smoothness = 5,
+    targetPart = "Head", -- Head, HumanoidRootPart, UpperTorso
+    teamCheck = false,
+    visibilityCheck = false,
+}
+
+-- Функция получения целей Last Front
+local function getAimbotTargets()
+    local targets = {}
+    
+    -- Пробуем найти игроков через стандартный Players
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= player then
+            if aimbotSettings.teamCheck then
+                -- Проверка команды (если есть Team)
+                if plr.Team and player.Team and plr.Team == player.Team then
+                    continue
+                end
+            end
+            if plr.Character then
+                local targetPart = plr.Character:FindFirstChild(aimbotSettings.targetPart)
+                if targetPart then
+                    table.insert(targets, {
+                        player = plr,
+                        part = targetPart,
+                    })
+                end
+            end
+        end
+    end
+    
+    -- Для Last Front: поиск NPC/мобов
+    -- Пробуем найти врагов в workspace
+    pcall(function()
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj:FindFirstChild("Humanoid") then
+                local humanoid = obj.Humanoid
+                if humanoid.Health > 0 then
+                    local targetPart = obj:FindFirstChild(aimbotSettings.targetPart) or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head")
+                    if targetPart then
+                        -- Проверяем, не является ли это игроком (уже добавлены)
+                        local isPlayer = false
+                        for _, t in pairs(targets) do
+                            if t.part == targetPart then
+                                isPlayer = true
+                                break
+                            end
+                        end
+                        if not isPlayer then
+                            table.insert(targets, {
+                                player = nil,
+                                part = targetPart,
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    
+    return targets
+end
+
+-- Функция проверки видимости
+local function isVisible(targetPos)
+    local camera = workspace.CurrentCamera
+    local char = player.Character
+    if not char then return false end
+    local head = char:FindFirstChild("Head")
+    if not head then return false end
+    
+    local ray = Ray.new(camera.CFrame.Position, (targetPos - camera.CFrame.Position).Unit * 500)
+    local hit = workspace:FindPartOnRay(ray, char)
+    
+    -- Упрощённая проверка
+    if hit then
+        local targetModel = hit:FindFirstAncestorOfClass("Model")
+        if targetModel then
+            return true -- Видимо
+        end
+    end
+    return false
+end
+
+-- Aimbot loop
+local aimbotConnection
+local function updateAimbot()
+    if aimbotConnection then
+        aimbotConnection:Disconnect()
+        aimbotConnection = nil
+    end
+    
+    if not aimbotSettings.enabled then return end
+    
+    aimbotConnection = game:GetService("RunService").RenderStepped:Connect(function()
+        local char = player.Character
+        if not char then return end
+        local camera = workspace.CurrentCamera
+        
+        local targets = getAimbotTargets()
+        if #targets == 0 then return end
+        
+        -- Поиск ближайшей цели к прицелу
+        local closest, closestDist = nil, aimbotSettings.fov
+        local mousePos = camera.ViewportSize / 2
+        
+        for _, target in pairs(targets) do
+            local pos, onScreen = camera:WorldToViewportPoint(target.part.Position)
+            if onScreen then
+                local dist = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
+                if dist < closestDist then
+                    -- Проверка видимости
+                    if aimbotSettings.visibilityCheck then
+                        if not isVisible(target.part.Position) then
+                            continue
+                        end
+                    end
+                    closestDist = dist
+                    closest = target
+                end
+            end
+        end
+        
+        if closest then
+            local targetPos = closest.part.Position
+            if aimbotSettings.silent then
+                -- Silent Aim (меняем направление пули, не камеру)
+                -- Для Silent Aim нужно взаимодействовать с системой оружия Last Front
+                -- Это зависит от конкретной игры
+                pcall(function()
+                    -- Пробуем изменить направление через репликацию
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        -- Разные методы для разных игр
+                        local handle = tool:FindFirstChild("Handle") or tool:FindFirstChild("Barrel")
+                        if handle then
+                            -- Изменяем CFrame оружия для силент аима
+                            local originalCF = handle.CFrame
+                            handle.CFrame = CFrame.new(handle.Position, targetPos)
+                            -- Возвращаем обратно почти сразу
+                            task.wait()
+                            pcall(function() handle.CFrame = originalCF end)
+                        end
+                    end
+                end)
+            else
+                -- Обычный аимбот (плавное наведение)
+                local aimCF = CFrame.new(camera.CFrame.Position, targetPos)
+                if aimbotSettings.smoothness > 0 then
+                    camera.CFrame = camera.CFrame:Lerp(aimCF, 1 / aimbotSettings.smoothness)
+                else
+                    camera.CFrame = aimCF
+                end
+            end
+        end
+    end)
+end
+
+-- Настройки аимбота
+createToggle("Enable Aimbot", aimbotScroll, false, function(state)
+    aimbotSettings.enabled = state
+    updateAimbot()
+end)
+
+createToggle("Silent Aim", aimbotScroll, false, function(state)
+    aimbotSettings.silent = state
+end)
+
+createToggle("Team Check", aimbotScroll, false, function(state)
+    aimbotSettings.teamCheck = state
+end)
+
+createToggle("Visibility Check", aimbotScroll, false, function(state)
+    aimbotSettings.visibilityCheck = state
+end)
+
+-- Target Part выбор
+local partFrame = Instance.new("Frame")
+partFrame.Size = UDim2.new(1, -5, 0, 32)
+partFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+partFrame.BorderSizePixel = 0
+partFrame.Parent = aimbotScroll
+
+local partCorner = Instance.new("UICorner")
+partCorner.CornerRadius = UDim.new(0, 6)
+partCorner.Parent = partFrame
+
+local partLabel = Instance.new("TextLabel")
+partLabel.Size = UDim2.new(0.5, 0, 1, 0)
+partLabel.Position = UDim2.new(0, 8, 0, 0)
+partLabel.BackgroundTransparency = 1
+partLabel.Text = "Target: Head"
+partLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+partLabel.Font = Enum.Font.Gotham
+partLabel.TextSize = 12
+partLabel.TextXAlignment = Enum.TextXAlignment.Left
+partLabel.Parent = partFrame
+
+local partBtn = Instance.new("TextButton")
+partBtn.Size = UDim2.new(0, 80, 0, 22)
+partBtn.Position = UDim2.new(1, -90, 0.5, -11)
+partBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+partBtn.BorderSizePixel = 0
+partBtn.Text = "Head"
+partBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+partBtn.Font = Enum.Font.GothamBold
+partBtn.TextSize = 11
+partBtn.AutoButtonColor = false
+partBtn.Parent = partFrame
+
+local partBtnCorner = Instance.new("UICorner")
+partBtnCorner.CornerRadius = UDim.new(0, 4)
+partBtnCorner.Parent = partBtn
+
+local parts = {"Head", "UpperTorso", "HumanoidRootPart"}
+local partIndex = 1
+
+partBtn.MouseButton1Click:Connect(function()
+    partIndex = partIndex % #parts + 1
+    aimbotSettings.targetPart = parts[partIndex]
+    partBtn.Text = parts[partIndex]
+    partLabel.Text = "Target: " .. parts[partIndex]
+end)
+
+-- FOV Slider
+createSlider("Aimbot FOV", aimbotScroll, 50, 500, 150, function(value)
+    aimbotSettings.fov = value
+end)
+
+-- Smoothness Slider
+createSlider("Smoothness", aimbotScroll, 0, 20, 5, function(value)
+    aimbotSettings.smoothness = value
+end)
+
+-- ==================== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ====================
+local contents = {
+    [visualsBtn] = visualContent,
+    [aimbotBtn] = aimbotContent,
+    [miscBtn] = miscContent,
+}
+
+visualsBtn.MouseButton1Click:Connect(function()
+    setActive(visualsBtn)
+    for btn, content in pairs(contents) do
+        content.Visible = (btn == visualsBtn)
+    end
+end)
+
+aimbotBtn.MouseButton1Click:Connect(function()
+    setActive(aimbotBtn)
+    for btn, content in pairs(contents) do
+        content.Visible = (btn == aimbotBtn)
+    end
+end)
+
+miscBtn.MouseButton1Click:Connect(function()
+    setActive(miscBtn)
+    for btn, content in pairs(contents) do
+        content.Visible = (btn == miscBtn)
+    end
+end)
+
+-- Активируем Aimbot по умолчанию
+setActive(aimbotBtn)
+aimbotContent.Visible = true
+visualContent.Visible = false
+
+-- ==================== ПЕРЕТАСКИВАНИЕ ====================
+local dragFrame = Instance.new("Frame")
+dragFrame.Size = UDim2.new(1, 0, 0, 45)
+dragFrame.BackgroundTransparency = 1
+dragFrame.Parent = mainFrame
+
+local dragging, dragStart, startPos
+dragFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+       input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+dragFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+       input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or 
+                     input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- ==================== ГОРЯЧАЯ КЛАВИША ====================
+game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.Insert then
+        gui.Enabled = not gui.Enabled
+    end
+end)
+
+print("✅ Часть 3 загружена! Меню полностью готово.")
+print("Используй Insert для скрытия/показа.")
